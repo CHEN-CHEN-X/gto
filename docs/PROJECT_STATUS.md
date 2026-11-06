@@ -5,7 +5,7 @@
 # GTO 主菜单黑洞背景 —— 项目现状
 
 > 最后更新：2026-11-06
-> 范围：`d:\JiuNeiRong\MC\代码\gto` 主菜单黑洞背景；以及该效果复用到 NeoForge 1.21.1 物品 mod 的可行性研究。
+> 范围：本仓库（`gto` 项目根目录）的 MC 主菜单黑洞背景；以及该效果复用到 NeoForge 1.21.1 物品 mod 的可行性研究。
 
 ---
 
@@ -19,7 +19,7 @@
 
 | 项 | 值 | 来源 |
 |---|---|---|
-| mod id / name | `gto_menu` / GregTech Odyssey Menu | [gradle.properties](file:///d:/JiuNeiRong/MC/代码/gto/gradle.properties#L59-L61) |
+| mod id / name | `gto_menu` / GregTech Odyssey Menu | [gradle.properties](../gradle.properties#L59-L61) |
 | 版本 | 1.0.0 | 同上 L65 |
 | MC / Forge | 1.20.1 / 47.4.5 | 同上 L17、L23 |
 | 映射 | `official` 1.20.1 | 同上 L42-L45 |
@@ -48,13 +48,13 @@ src/main/resources/assets/gto_menu/shaders/
 └── composite.fsh                      ACES + sRGB + 暗角 + 底部压暗 + 抖动
 ```
 
-### 3.1 渲染管线（[BlackHoleRenderer.java](file:///d:/JiuNeiRong/MC/代码/gto/src/main/java/com/gto/menu/render/BlackHoleRenderer.java)）
+### 3.1 渲染管线（[BlackHoleRenderer.java](../src/main/java/com/gto/menu/render/BlackHoleRenderer.java)）
 
 `scene → trail → bloom(H/V/H/V) → composite`，全部 `RGBA16F`，scene 按 `RenderConfig.RENDER_SCALE = 0.75` 降分辨率。
 
-- 着色器加载点：[L301-L306](file:///d:/JiuNeiRong/MC/代码/gto/src/main/java/com/gto/menu/render/BlackHoleRenderer.java#L301-L306)，**当前 scene 绑的是 `blackhole.fsh`（L303）**。
+- 着色器加载点：[L301-L306](../src/main/java/com/gto/menu/render/BlackHoleRenderer.java#L301-L306)，**当前 scene 绑的是 `blackhole.fsh`（L303）**。
 - 切换版本 = 改这一行字符串，Java 侧无需其它改动。
-- 输出绑回 MC 主 FBO：[L147](file:///d:/JiuNeiRong/MC/代码/gto/src/main/java/com/gto/menu/render/BlackHoleRenderer.java#L147)。
+- 输出绑回 MC 主 FBO：[L147](../src/main/java/com/gto/menu/render/BlackHoleRenderer.java#L147)。
 - 时间源 `System.nanoTime()`，不依赖 `System.currentTimeMillis`。
 
 ---
@@ -63,11 +63,11 @@ src/main/resources/assets/gto_menu/shaders/
 
 | 版本 | 文件 | 状态 | 内容 | 已知问题 |
 |---|---|---|---|---|
-| v1 | [blackhole.fsh](file:///d:/JiuNeiRong/MC/代码/gto/src/main/resources/assets/gto_menu/shaders/blackhole.fsh) | **线上** | 9 条数字细环（`RINGS = 9`，L48），环上均匀排 0/1，无连续盘面 | 视觉退化成"9 条数字带"，用户明确不满意 |
-| v2 | [blackhole_disk_v2.fsh](file:///d:/JiuNeiRong/MC/代码/gto/src/main/resources/assets/gto_menu/shaders/blackhole_disk_v2.fsh) | **离线验证通过，未接线** | 连续吸积盘（r^-2.6 亮度、开普勒剪切条纹、掠射光学厚度、内缘光子环）+ 双层数字（±0.28，4 行/环 16 个，独立相位，精确 billboard） | 盘面仍偏"干净正弦条纹"，缺气体感 |
-| v3 | [blackhole_volume_v3.fsh](file:///d:/JiuNeiRong/MC/代码/gto/src/main/resources/assets/gto_menu/shaders/blackhole_volume_v3.fsh) | **离线验证通过，未接线** | v2 + 每步 `ds` 积分的场景内发光晕（`inSceneGlow`）+ 三倍频反向旋转值噪声（`filament`） | 16×16 尺寸下这两项增益几乎不可见；**未进游戏验证（实验件）** |
+| v1 | [blackhole.fsh](../src/main/resources/assets/gto_menu/shaders/blackhole.fsh) | **线上** | 9 条数字细环（`RINGS = 9`，L48），环上均匀排 0/1，无连续盘面 | 视觉退化成"9 条数字带"，用户明确不满意 |
+| v2 | [blackhole_disk_v2.fsh](../src/main/resources/assets/gto_menu/shaders/blackhole_disk_v2.fsh) | **离线验证通过，未接线** | 连续吸积盘（r^-2.6 亮度、开普勒剪切条纹、掠射光学厚度、内缘光子环）+ 双层数字（±0.28，4 行/环 16 个，独立相位，精确 billboard） | 盘面仍偏"干净正弦条纹"，缺气体感 |
+| v3 | [blackhole_volume_v3.fsh](../src/main/resources/assets/gto_menu/shaders/blackhole_volume_v3.fsh) | **离线验证通过，未接线** | v2 + 每步 `ds` 积分的场景内发光晕（`inSceneGlow`）+ 三倍频反向旋转值噪声（`filament`） | 16×16 尺寸下这两项增益几乎不可见；**未进游戏验证（实验件）** |
 
-数字层关键事实（纠正一个常见误判）：**每条环不是只有一个数字**，`cellW = 1/uDigitDensity`、`nD = max(floor(TAU*rr/cellW), 8.0)`([blackhole.fsh#L172-L173](file:///d:/JiuNeiRong/MC/代码/gto/src/main/resources/assets/gto_menu/shaders/blackhole.fsh#L172-L173))，在默认 `uDigitDensity = 2.8` 下约为 **58~158 个/环**；问题在于 v1 没有连续盘面介质，视觉上塌成"数字带"。
+数字层关键事实（纠正一个常见误判）：**每条环不是只有一个数字**，`cellW = 1/uDigitDensity`、`nD = max(floor(TAU*rr/cellW), 8.0)`([blackhole.fsh#L172-L173](../src/main/resources/assets/gto_menu/shaders/blackhole.fsh#L172-L173))，在默认 `uDigitDensity = 2.8` 下约为 **58~158 个/环**；问题在于 v1 没有连续盘面介质，视觉上塌成"数字带"。
 
 ---
 
@@ -90,14 +90,16 @@ src/main/resources/assets/gto_menu/shaders/
 
 | 工具 | 位置 | 用途 |
 |---|---|---|
-| 预览器 | [scripts/preview.py](file:///d:/JiuNeiRong/MC/代码/gto/scripts/preview.py) | 加载工程真实 shader，跑 scene/trail/bloom/composite，输出 PNG |
+| 预览器 | [scripts/preview.py](../scripts/preview.py) | 加载工程真实 shader，跑 scene/trail/bloom/composite，输出 PNG |
 | 运行时 | `.pyenv`（moderngl + glfw + numpy + pillow，Python 3.14） | 本地 GL 3.3 core 上下文 |
 
 产物：
 
-- [效果图/preview_v1.png](computer://d:\JiuNeiRong\MC\代码\gto\效果图\preview_v1.png) —— v1
-- [效果图/preview_disk_v2.png](computer://d:\JiuNeiRong\MC\代码\gto\效果图\preview_disk_v2.png) —— v2
-- [效果图/icon_samples/](computer://d:\JiuNeiRong\MC\代码\gto\效果图\icon_samples) —— 16×16 / 64×64 物品样张（v2 vs v3 同机位对照）
+- `效果图/preview_v1.png` —— v1
+- `效果图/preview_disk_v2.png` —— v2
+- `效果图/icon_samples/` —— 16×16 / 64×64 物品样张（v2 vs v3 同机位对照）
+
+（`效果图/` 为本地素材目录，不入库）
 
 ### 已知坑（踩过的）
 
@@ -132,7 +134,7 @@ src/main/resources/assets/gto_menu/shaders/
 
 ## 8. 物品侧（skyland-build）研究结论
 
-目标工程：`C:\Users\chenx\Documents\Trae-CN\temp_20261104_01\skyland-build`，物品 `lastone_skyland:skyland_gateway`（16×16 图标，也会在手持/掉落/展示框放大）。
+目标工程：`skyland-build`（独立的 NeoForge 1.21.1 工程，未入库），物品 `lastone_skyland:skyland_gateway`（16×16 图标，也会在手持/掉落/展示框放大）。
 
 | 结论 | 内容 |
 |---|---|
@@ -141,7 +143,7 @@ src/main/resources/assets/gto_menu/shaders/
 | 时序累积 | 物品路径拿不到 FBO → 必丢；这是"丝滑"的真正来源，只能靠离线烘焙 |
 | 推荐落地 | **b) 单 pass 降级实时** 为主（16×16 仅 256 px，60~120 步 RK4 成本可忽略，且不碰 FBO）；**a) 预渲染循环帧** 兜底（想要 16px 也带 bloom 就只能烘焙）；**c) 离屏+缓存** 不推荐（踩 FBO 禁区，收益只有 bloom） |
 
-样张（均已在离线渲染产出，非推测）：[icon_samples/v3_16_full_x8.png](computer://d:\JiuNeiRong\MC\代码\gto\效果图\icon_samples\v3_16_full_x8.png)、[v3_64_full_x4.png](computer://d:\JiuNeiRong\MC\代码\gto\效果图\icon_samples\v3_64_full_x4.png)、[v3_64_nobloom_x4.png](computer://d:\JiuNeiRong\MC\代码\gto\效果图\icon_samples\v3_64_nobloom_x4.png)、[v2_vs_v3.png](computer://d:\JiuNeiRong\MC\代码\gto\效果图\icon_samples\v2_vs_v3.png)。
+样张（均已在离线渲染产出，非推测）：`效果图/icon_samples/` 下的 `v3_16_full_x8.png`、`v3_64_full_x4.png`、`v3_64_nobloom_x4.png`、`v2_vs_v3.png`。
 
 `效果\` 目录里用户导出的 16 张 PNG 全是 **140×79 的 Shadertoy UI 缩略图**（两张噪声通道 + 各 pass 层图标），**没有成品画面**，所以无法做像素级对照。
 
@@ -149,7 +151,7 @@ src/main/resources/assets/gto_menu/shaders/
 
 ## 9. 待办 / 待决
 
-1. **决定主菜单挂哪个版本**：若采纳 v3，改 [BlackHoleRenderer.java#L303](file:///d:/JiuNeiRong/MC/代码/gto/src/main/java/com/gto/menu/render/BlackHoleRenderer.java#L303) 一行即可。当前 `RenderConfig` 实际值：`RENDER_SCALE 0.75`、`DISK_INNER 3.0`、`DISK_OUTER 9.0`、`TRAIL_DECAY 0.85`、`BLOOM_THRESHOLD 1.1`、`BLOOM_STRENGTH 0.6`；切换后是否需要重调（尤其是 `TRAIL_DECAY` 与 bloom 阈值）**尚未验证**。
+1. **决定主菜单挂哪个版本**：若采纳 v3，改 [BlackHoleRenderer.java#L303](../src/main/java/com/gto/menu/render/BlackHoleRenderer.java#L303) 一行即可。当前 `RenderConfig` 实际值：`RENDER_SCALE 0.75`、`DISK_INNER 3.0`、`DISK_OUTER 9.0`、`TRAIL_DECAY 0.85`、`BLOOM_THRESHOLD 1.1`、`BLOOM_STRENGTH 0.6`；切换后是否需要重调（尤其是 `TRAIL_DECAY` 与 bloom 阈值）**尚未验证**。
 2. **v2/v3 的条纹是否换成上游 `diskFbm`**（0xydev，MIT，4 阶 `pnoise2`）——这是许可证干净、且能提升"气体感"的唯一路径。
 3. **物品侧是否开工**：需用户确认后才动 skyland-build；届时产物是「1 个 shader + BEWLR + `uRect` 修正」，需 `endBatch`。
 4. **许可证风险**：任何来自 `lstSRS` 的做法都不得进入发行物。
