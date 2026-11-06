@@ -90,6 +90,15 @@ libs/                            FancyMenu / Konkrete / Melody 依赖 jar
 
 MIT，见 [LICENSE.txt](LICENSE.txt)。与 `mods.toml` 中的 `license=MIT` 一致。
 
-## 贡献
+## 贡献与来源
 
-见 [docs/CONTRIBUTION.md](docs/CONTRIBUTION.md)。
+本项目由人工与 AI 协作完成。整体来看，人工与 AI 大致各占一半，AI 略多（约占一大半）。按模块拆开后，两者的分工并不平均：
+
+| 模块 | 人工 | AI |
+|---|---|---|
+| 渲染部分（shader 编写、渲染管线、效果调参与取舍） | 约 60% | 约 40% |
+| 其他部分（工程搭建、构建与依赖配置、工具脚本、文档整理） | 约 30% | 约 70% |
+
+以上为按工作量估算的大致比例，不是精确统计。更完整的说明见 [docs/CONTRIBUTION.md](docs/CONTRIBUTION.md)。
+
+`效果/` 与 `效果图/` 是本地素材，**不入版本库**（已写入 `.gitignore`）：前者是用户提供的参考素材（Shadertoy pass 源码导出与截图缩略图），后者是离线渲染产出的成品图与预览 GIF。它们只用于本地对照与试验，不随仓库分发。
