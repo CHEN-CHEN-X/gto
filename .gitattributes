@@ -1,3 +1,6 @@
+# 仓库统一使用 LF：文本文件入库与检出均为 LF，二进制文件由 git 自动识别
+* text=auto eol=lf
+
 # Disable autocrlf on generated files, they always generate with LF
 # Add any extra files or paths here to make git stop saying they
 # are changed when only line endings change.
