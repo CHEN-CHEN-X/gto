@@ -52,6 +52,22 @@ Minecraft **1.20.1 / Forge 47.4.5** 的主菜单黑洞渲染模组（mod id `gto
 ./gradlew --refresh-dependencies
 ```
 
+### JDK 版本说明
+
+| 项 | 实际情况 |
+|---|---|
+| 构建目标 | **Java 17**。[build.gradle#L36](build.gradle#L36) 的 `java.toolchain.languageVersion = JavaLanguageVersion.of(17)` 强制指定；仓库内没有 `sourceCompatibility` / `targetCompatibility` 覆盖，因此编译产物就是 17 |
+| Gradle | wrapper 使用 **Gradle 8.8**（`gradle/wrapper/gradle-wrapper.properties`） |
+| 已记录的编译验证 | **无**。仓库内没有构建日志，`docs/` 也未记录曾用哪个 JDK 完成过构建 |
+| 当前开发机 | PATH 中的 `java` 为 **JDK 26.0.1**，本机另装有 JDK 21 与 JDK 24，**未找到 JDK 25** |
+
+关于 JDK 25：
+
+- **已确认的事实**：当前开发者设备因环境与网络综合问题，**未能用 JDK 25 完成编译验证**。
+- **推测（尚未实测）**：预计用 JDK 25 编译问题不大——toolchain 已强制目标为 17，源码本身也不依赖 25 的新特性，只要 Gradle 能在该 JDK 上启动即可。但下面两点没有任何实测依据：Gradle 8.8 能否在 JDK 25 上正常运行、以及在缺少 JDK 17 时 toolchain 能否解析成功。若真出问题，最可能落在 Gradle 启动或 toolchain 查找阶段，而不是源码本身。
+
+需要强调：以上除"未能用 JDK 25 验证"这一条外，其余都是推断，不构成可用性承诺。
+
 ## 目录结构
 
 ```
