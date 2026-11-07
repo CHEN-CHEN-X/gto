@@ -1,38 +1,9 @@
-致谢 / Credits
+素材与参考来源 / Credits
 
-本项目基于 Minecraft Forge MDK 开发
-====================================
-构建骨架、Gradle 配置与早期 Mixin 支持来自 Minecraft Forge MDK（1.20.1，Forge 47.4.20）。
-Forge 团队多年维护的工具链让这类客户端渲染模组成为可能，在此致谢。
-
-Forge 原始致谢中仍有意义的部分保留如下：
-
-  Forge 最初由 Eloraam（RedPower）与 SpaceToad（Buildcraft）在 Minecraft alpha 时期创建，
-  其后由 LexManos 接手维护；cpw 开发的 FML 稳定了客户端与服务端的模组生态；
-  Mezz 长期承担 issue 与 PR 管理；MCP 团队（Searge 等）提供了模组开发所依赖的核心工具。
-
-  -- LexManos
-
-运行时依赖
-==========
-  Minecraft 1.20.1
-  Minecraft Forge 47.4.20
-  仅此两项；本模组不再依赖 FancyMenu、Konkrete 或 Melody，也不含本项目 Mixin。
-
-  libs/ 下保留的 FancyMenu 3.9.6、Konkrete 1.8.0、Melody 1.0.3 三个 jar 是历史依赖，
-  当前构建与运行均不使用，仅作存档参考。
-
-着色器参考
-==========
-  当前主菜单采用用户提供的参考图材质，配合随包打包的数字字形图集与烘焙轨道数据。
-  程序化回退渲染器为自研实现（Schwarzschild 零测地线积分 + 4 pass HDR 管线），未直接复制第三方代码。
-  设计阶段参考过以下公开实现，均已核对为 MIT 许可：
-    0xydev/blackhole、zhongjn/Messier87、sayed1145/glsl-black-hole、Sun-sh902/Gargantua
-
-  另有一个 Shadertoy 作品（lstSRS）曾用于效果对比：该作品源码不含任何许可声明，
-  因此仅作本地研究参考，未引入本项目，未进入任何发行物。
-
-字体与贴图
-==========
-  数字字形来自随包打包的 glyph 图集与烘焙轨道数据，不依赖外部字体。
-  全盘静态材质由用户提供的参考图派生，见 scripts/bake_plate_materials.py。
+- 工程基于 Minecraft Forge MDK。
+- 黑洞底图及数字素材由用户提供的参考图派生；生成脚本位于 scripts/。
+- 星球与火箭按钮素材使用图像生成工具制作。
+- 标题、中央图标和密封机壳模型由运行时安装的 GTOCore / GTCEu 提供，未复制到本模组。
+- 程序化回退渲染器设计参考：0xydev/blackhole、zhongjn/Messier87、
+  sayed1145/glsl-black-hole、Sun-sh902/Gargantua。第三方许可声明保留在
+  src/main/resources/META-INF/licenses/。
