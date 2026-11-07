@@ -54,9 +54,6 @@ public final class BlackHoleRenderer {
                        cBottomStart, cBottomEnd, cBottomDark;
 
     private static long trailFrameNanos;
-    private static long lastFrameNanos;
-    private static float emaFrameMs = 16.7f;
-    private static int frameCount;
 
     private BlackHoleRenderer() {}
 
@@ -170,7 +167,6 @@ public final class BlackHoleRenderer {
         if (depthTest) GL11.glEnable(GL11.GL_DEPTH_TEST);
         if (blend) GL11.glEnable(GL11.GL_BLEND);
 
-        reportFps(w, h);
     }
 
     private static void runBloom(Fbo dst, int srcTex, float dx, float dy,
@@ -307,20 +303,6 @@ public final class BlackHoleRenderer {
 
     // ==================== 初始化 ====================
 
-    private static void reportFps(int w, int h) {
-        long now = System.nanoTime();
-        if (lastFrameNanos != 0) {
-            float ms = (now - lastFrameNanos) / 1_000_000.0f;
-            emaFrameMs += (ms - emaFrameMs) * 0.05f;
-        }
-        lastFrameNanos = now;
-        if (++frameCount % 120 == 0) {
-            GTOMenuMod.LOGGER.info("GTO Menu: 管线 {} ms/帧 (约 {} FPS), 内部 {}x{}",
-                String.format("%.1f", emaFrameMs),
-                Math.round(1000.0f / Math.max(emaFrameMs, 0.01f)), w, h);
-        }
-    }
-
     private static void init() {
         startNanos = System.nanoTime();
         try {
@@ -377,7 +359,6 @@ public final class BlackHoleRenderer {
 
             vao = GL30.glGenVertexArrays();
             active = true;
-            GTOMenuMod.LOGGER.info("GTO Menu: 黑洞多 pass HDR 管线初始化成功");
         } catch (Exception e) {
             GTOMenuMod.LOGGER.error("GTO Menu: pipeline init failed", e);
             active = false;

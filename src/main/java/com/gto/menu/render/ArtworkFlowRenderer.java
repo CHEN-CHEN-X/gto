@@ -134,7 +134,6 @@ public final class ArtworkFlowRenderer {
         strengthLoc = GL20.glGetUniformLocation(program, "uFlowStrength");
         start = System.nanoTime();
         active = true;
-        GTOMenuMod.LOGGER.info("GTO artwork flow ready: {}x{}, {} texture bytes, no frame cache/FBOs", width, height, width*height*4);
     }
 
     private static void release() {

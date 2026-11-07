@@ -14,16 +14,10 @@ description='''
 ${mod_description}
 
 Features:
-- GLSL black hole shader background (self-rendered, no FancyMenu dependency)
-- 14-tier voltage block orbital animation
-- Three-color system (cyan/magenta/warm white)
-- Schwarzschild ray-traced accretion disk
-- Gravitational lensing & photon ring
+- Forge screen events for the title-screen effect
+- Reference-derived animated binary orbits and a black-hole background
+- Standalone rendering without third-party menu mods
 '''
-
-# Mixin 配置：拦截 TitleScreen 渲染，替换全景图为黑洞着色器
-[[mixins]]
-    config = "gto_menu.mixins.json"
 
 # 依赖 Forge（仅客户端，主题只在主菜单生效）
 [[dependencies.${mod_id}]]
@@ -38,13 +32,5 @@ Features:
     modId="minecraft"
     mandatory=true
     versionRange="${minecraft_version_range}"
-    ordering="NONE"
-    side="CLIENT"
-
-# FancyMenu 仅作可选组件：若存在则负责按钮/标题排版，不存在也不影响黑洞背景渲染
-[[dependencies.${mod_id}]]
-    modId="fancymenu"
-    mandatory=false
-    versionRange="[3.9.6,)"
     ordering="NONE"
     side="CLIENT"

@@ -8,6 +8,7 @@ in vec4 aAtlas;
 in vec4 aSize;
 out vec2 glyphUv;
 out vec2 sceneUv;
+flat out vec2 centerUv;
 const float PI=3.141592653589793;
 mat2 rotation(float a){return mat2(cos(a),sin(a),-sin(a),cos(a));}
 vec2 pose(float phase,int row){
@@ -35,7 +36,10 @@ void main(){
  float angle=atan(tangent.y,tangent.x)+aMotion.y-aSize.z;
  local=rotation(angle)*local;
  local*=clamp(state.y/max(aSize.w,1.),.55,1.8);
- vec2 p=aOrbit.xy+rotation(aMotion.y)*orbit+local;
+ vec2 center=aOrbit.xy+rotation(aMotion.y)*orbit;
+ centerUv=center/vec2(uSourceAspect,1.)+.5;
+ centerUv.y=1.-centerUv.y;
+ vec2 p=center+local;
  float aspect=uResolution.x/uResolution.y;
  float fit=min(1.,aspect/uSourceAspect);
  gl_Position=vec4(p/vec2(aspect,1.)*fit*2.,0,1);

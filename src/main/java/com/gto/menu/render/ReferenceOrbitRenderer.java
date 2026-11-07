@@ -19,8 +19,12 @@ import java.util.zip.GZIPInputStream;
 public final class ReferenceOrbitRenderer {
     private static boolean attempted, active;
     private static int plateProgram, glyphProgram, plateVao, glyphVao, vbo;
-    private static final int[] textures = new int[3];
+    private static final int[] textures = new int[5];
     private static int width, height, glyphCount;
+    private static int plateBrightRegions, plateDarkRegions, plateRegionStrength;
+    private static final FloatBuffer brightRegions=BufferUtils.createFloatBuffer(136);
+    private static final FloatBuffer darkRegions=BufferUtils.createFloatBuffer(136);
+    private static float[] lightTracks;
     private static int plateResolution, plateAspect, glyphResolution, glyphAspect, glyphAngle, glyphOpacity;
     private static long start;
 
@@ -34,9 +38,9 @@ public final class ReferenceOrbitRenderer {
         int prevBuffer=GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         int prevFbo=GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
         int prevUnit=GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
-        int[] oldTextures=new int[3], viewport=new int[4];
+        int[] oldTextures=new int[5], viewport=new int[4];
         GL11.glGetIntegerv(GL11.GL_VIEWPORT,viewport);
-        for(int i=0;i<3;i++) {
+        for(int i=0;i<textures.length;i++) {
             GL13.glActiveTexture(GL13.GL_TEXTURE0+i);
             oldTextures[i]=GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
         }
@@ -56,11 +60,17 @@ public final class ReferenceOrbitRenderer {
             enabled(GL11.GL_DEPTH_TEST,false);enabled(GL11.GL_BLEND,false);
             enabled(GL11.GL_SCISSOR_TEST,false);enabled(GL11.GL_CULL_FACE,false);
             enabled(GL30.GL_FRAMEBUFFER_SRGB,false);GL11.glDepthMask(false);
-            for(int i=0;i<3;i++) {
+            for(int i=0;i<textures.length;i++) {
                 GL13.glActiveTexture(GL13.GL_TEXTURE0+i);
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D,textures[i]);
             }
+            double seconds=(System.nanoTime()-start)/1.0e9;
             GL20.glUseProgram(plateProgram);GL30.glBindVertexArray(plateVao);
+            double lightTurns=seconds/RenderConfig.ARTWORK_SPOT_ORBIT_SECONDS;
+            updateLightRegions(lightTurns);
+            boolean lightEnabled=RenderConfig.ARTWORK_FLOW_STRENGTH>0;
+            GL20.glUniform2f(plateRegionStrength,lightEnabled ? RenderConfig.ARTWORK_SPOT_BRIGHT_GAIN : 0f,
+                lightEnabled ? RenderConfig.ARTWORK_SPOT_DARK_DROP : 0f);
             GL20.glUniform2f(plateResolution,w,h);GL20.glUniform1f(plateAspect,(float)width/height);
             GL11.glDrawArrays(GL11.GL_TRIANGLES,0,3);
             GL20.glUseProgram(glyphProgram);GL30.glBindVertexArray(glyphVao);
@@ -68,7 +78,6 @@ public final class ReferenceOrbitRenderer {
             enabled(GL11.GL_BLEND,true);
             GL20.glBlendEquationSeparate(GL14.GL_FUNC_ADD,GL14.GL_FUNC_ADD);
             GL14.glBlendFuncSeparate(GL11.GL_ONE,GL11.GL_ONE,GL11.GL_ZERO,GL11.GL_ONE);
-            double seconds=(System.nanoTime()-start)/1.0e9;
             float trail=RenderConfig.ARTWORK_TRAIL_STRENGTH;
             if(trail>0) {
                 drawGlyphs(seconds-.16,trail*.4f);
@@ -81,7 +90,7 @@ public final class ReferenceOrbitRenderer {
             GTOMenuMod.LOGGER.error("GTO reference orbits failed; using procedural fallback",e);
             return false;
         } finally {
-            for(int i=0;i<3;i++) {
+            for(int i=0;i<textures.length;i++) {
                 GL13.glActiveTexture(GL13.GL_TEXTURE0+i);
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D,oldTextures[i]);
             }
@@ -97,6 +106,55 @@ public final class ReferenceOrbitRenderer {
         }
     }
 
+    private static void loadLightTracks() throws Exception {
+        try(DataInputStream in=new DataInputStream(new GZIPInputStream(resource("textures/light_tracks.bin.gz")))) {
+            if(in.readInt()!=0x47544C31||in.readInt()!=8||in.readInt()!=512)
+                throw new IllegalStateException("Invalid source-guided light paths");
+            lightTracks=new float[8*512*2];
+            for(int i=0;i<lightTracks.length;i++) {
+                lightTracks[i]=in.readFloat();
+                if(!Float.isFinite(lightTracks[i]))throw new IllegalStateException("Invalid light path coordinate");
+            }
+            if(in.read()!=-1)throw new IllegalStateException("Unexpected light path data");
+        }
+    }
+
+    private static float trackValue(int track,int sample,int axis) {
+        return lightTracks[(track*512+(sample&511))*2+axis];
+    }
+
+    private static void putRegion(FloatBuffer out,int track,double phase) {
+        double index=(phase-Math.floor(phase))*512.0;
+        int i=(int)Math.floor(index);float f=(float)(index-i);
+        float x=0,y=0,dx=0,dy=0;
+        for(int axis=0;axis<2;axis++) {
+            float p0=trackValue(track,i-1,axis),p1=trackValue(track,i,axis);
+            float p2=trackValue(track,i+1,axis),p3=trackValue(track,i+2,axis);
+            float a=-p0+p2,b=2*p0-5*p1+4*p2-p3,c=-p0+3*p1-3*p2+p3;
+            float pos=.5f*(2*p1+a*f+b*f*f+c*f*f*f);
+            float tangent=.5f*(a+2*b*f+3*c*f*f);
+            if(axis==0){x=pos;dx=tangent;}else{y=pos;dy=tangent;}
+        }
+        float length=(float)Math.sqrt(dx*dx+dy*dy);
+        out.put(x).put(y).put(dx/Math.max(length,1e-7f)).put(dy/Math.max(length,1e-7f));
+    }
+
+    private static void updateLightRegions(double turns) {
+        brightRegions.clear();darkRegions.clear();
+        for(int i=0;i<8;i++) {
+            int patches=i<2 ? 5 : 4;
+            for(int patch=0;patch<patches;patch++) {
+                double phase=turns+i*.38196601125+patch/(double)patches;
+                putRegion(brightRegions,i,phase);
+                // Alternate independent bright/dark patches around the closed track.
+                putRegion(darkRegions,i,phase+0.5/patches);
+            }
+        }
+        brightRegions.flip();darkRegions.flip();
+        GL20.glUniform4fv(plateBrightRegions,brightRegions);
+        GL20.glUniform4fv(plateDarkRegions,darkRegions);
+    }
+
     private static void drawGlyphs(double seconds,float opacity) {
         double turns=seconds*RenderConfig.ARTWORK_FLOW_STRENGTH/60.0;
         GL20.glUniform1f(glyphAngle,(float)((turns-Math.floor(turns))*Math.PI*2.0));
@@ -105,11 +163,14 @@ public final class ReferenceOrbitRenderer {
     }
 
     private static void init() throws Exception {
+        loadLightTracks();
         plateProgram=link("fsquad.vsh","orbit_plate.fsh",false);
         glyphProgram=link("glyph_orbit.vsh","glyph_orbit.fsh",true);
         textures[0]=loadTexture("orbit_plate.png",true);
         textures[1]=loadTexture("orbit_glyphs.png",false);
         textures[2]=loadTexture("orbit_lut.png",false);
+        textures[3]=loadTexture("plate_bright_digits.png",false);
+        textures[4]=loadTexture("plate_dark_lines.png",false);
         plateVao=GL30.glGenVertexArrays();glyphVao=GL30.glGenVertexArrays();
         FloatBuffer vertices;
         try(DataInputStream in=new DataInputStream(new GZIPInputStream(resource("textures/orbit_instances.bin.gz")))) {
@@ -135,8 +196,13 @@ public final class ReferenceOrbitRenderer {
             GL20.glVertexAttribPointer(i,4,GL11.GL_FLOAT,false,64,i*16L);
         }
         GL20.glUseProgram(plateProgram);GL20.glUniform1i(GL20.glGetUniformLocation(plateProgram,"uArtwork"),0);
+        GL20.glUniform1i(GL20.glGetUniformLocation(plateProgram,"uBrightMaterial"),3);
+        GL20.glUniform1i(GL20.glGetUniformLocation(plateProgram,"uDarkMaterial"),4);
         plateResolution=GL20.glGetUniformLocation(plateProgram,"uResolution");
         plateAspect=GL20.glGetUniformLocation(plateProgram,"uSourceAspect");
+        plateBrightRegions=GL20.glGetUniformLocation(plateProgram,"uBrightRegions[0]");
+        plateDarkRegions=GL20.glGetUniformLocation(plateProgram,"uDarkRegions[0]");
+        plateRegionStrength=GL20.glGetUniformLocation(plateProgram,"uRegionStrength");
         GL20.glUseProgram(glyphProgram);
         GL20.glUniform1i(GL20.glGetUniformLocation(glyphProgram,"uPlate"),0);
         GL20.glUniform1i(GL20.glGetUniformLocation(glyphProgram,"uGlyphs"),1);
@@ -146,7 +212,6 @@ public final class ReferenceOrbitRenderer {
         glyphAngle=GL20.glGetUniformLocation(glyphProgram,"uOrbitAngle");
         glyphOpacity=GL20.glGetUniformLocation(glyphProgram,"uOpacity");
         start=System.nanoTime();active=true;
-        GTOMenuMod.LOGGER.info("GTO reference orbits ready: {} glyphs, {}x{} plate; no video/frame cache/FBO",glyphCount,width,height);
     }
 
     private static int loadTexture(String name,boolean scene) throws Exception {

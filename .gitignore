@@ -25,7 +25,7 @@ run
 forge*changelog.txt
 
 # 本地运行环境 / 测试实例（体积巨大，非源码）
-client/
+/client/
 .pyenv/
 backups/
 config/
@@ -37,4 +37,3 @@ config/
 # 本地素材（参考图 / 渲染成品 / 导出的 shader 源码）：用户资产，不入版本库
 /效果/
 /效果图/
-
