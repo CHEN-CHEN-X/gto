@@ -22,8 +22,9 @@ import org.lwjgl.glfw.GLFW;
 public final class PlanetMenu {
     private static final String[] KEYS={"menu.singleplayer","menu.multiplayer","fml.menu.mods","menu.options","menu.quit"};
     private static final String[] FILES={"single","multi","mods","options","quit"};
-    private static final float[] X={.92f,.95f,.80f,.65f,.845f};
-    private static final float[] Y={.62f,.76f,.74f,.91f,.91f};
+    // Five-ring arrangement rotated along the disk: options / mods / single above, quit / multi below.
+    private static final float[] X={.93f,.91f,.805f,.645f,.78f};
+    private static final float[] Y={.60f,.78f,.72f,.84f,.92f};
     private static final ResourceLocation TITLE=new ResourceLocation("gtocore","textures/gui/title/title.png");
     private static final ResourceLocation LOGO=new ResourceLocation("gtocore","textures/gui/title/logo.png");
     private static final ResourceLocation[] ICONS=new ResourceLocation[FILES.length];
