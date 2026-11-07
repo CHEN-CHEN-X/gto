@@ -3,6 +3,7 @@ package com.gto.menu.client;
 import com.gto.menu.GTOMenuMod;
 import com.gto.menu.render.BlackHoleRenderer;
 import com.gto.menu.render.RenderConfig;
+import com.gto.menu.render.VoltageBlockRenderer;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraftforge.api.distmarker.Dist;
@@ -26,6 +27,8 @@ public final class MenuRenderEvents {
         BlackHoleRenderer.render();
         // Leave vanilla rendering and input available if both renderers fail.
         if (BlackHoleRenderer.isActive()) {
+            VoltageBlockRenderer.render(event.getGuiGraphics(), event.getScreen().width, event.getScreen().height);
+            PlanetMenu.render(event.getScreen(),event.getGuiGraphics(),event.getMouseX(),event.getMouseY());
             event.setCanceled(true);
         }
     }
@@ -36,11 +39,17 @@ public final class MenuRenderEvents {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void preventHiddenMouseActions(ScreenEvent.MouseButtonPressed.Pre event) {
-        if (hidesControls(event.getScreen())) event.setCanceled(true);
+        if (hidesControls(event.getScreen())) {
+            PlanetMenu.click(event.getScreen(),event.getMouseX(),event.getMouseY(),event.getButton());
+            event.setCanceled(true);
+        }
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void preventHiddenKeyboardActions(ScreenEvent.KeyPressed.Pre event) {
-        if (hidesControls(event.getScreen())) event.setCanceled(true);
+        if (hidesControls(event.getScreen())) {
+            PlanetMenu.key(event.getScreen(),event.getKeyCode());
+            event.setCanceled(true);
+        }
     }
 }

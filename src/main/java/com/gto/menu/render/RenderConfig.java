@@ -18,9 +18,11 @@ public final class RenderConfig {
     /** Faint past-pose emission at 80/160 ms; no framebuffer history. */
     public static final float ARTWORK_TRAIL_STRENGTH = 0.05f;
     /** Opacity of the aligned bright-digit / dark-line materials (0..1); no UV motion. */
-    public static final float ARTWORK_SPOT_BRIGHT_GAIN = 1.0f;
-    public static final float ARTWORK_SPOT_DARK_DROP = 1.0f;
+    public static final float ARTWORK_SPOT_BRIGHT_GAIN = 0.7f;
+    public static final float ARTWORK_SPOT_DARK_DROP = 0.28f;
     public static final float ARTWORK_SPOT_ORBIT_SECONDS = 300.0f;
+    /** Background binary stars, relative to full brightness; 0 disables them. */
+    public static final float BACKGROUND_STAR_STRENGTH = 0.4f;
 
     // ==================== 相机（轨道相机） ====================
     /** 方位角（弧度），固定；可改为随时间缓慢自转 */

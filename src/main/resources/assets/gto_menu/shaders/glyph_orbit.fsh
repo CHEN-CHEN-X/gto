@@ -2,6 +2,7 @@
 uniform sampler2D uGlyphs,uPlate;
 uniform float uOpacity;
 uniform float uSourceAspect;
+uniform vec3 uMouse;
 in vec2 glyphUv;
 in vec2 sceneUv;
 flat in vec2 centerUv;
@@ -22,5 +23,7 @@ void main(){
  vec2 q=p-vec2(0.,.015);
  float ry=-sin(.26)*p.x+cos(.26)*(p.y+.015);
  if(length(q)<.19&&ry>-.065)discard;
- fragColor=vec4(texture(uGlyphs,glyphUv).rgb*visibility*uOpacity,0.);
+ vec2 center=(centerUv-vec2(.5))*vec2(uSourceAspect,-1.);
+ float hover=(1.-smoothstep(.025,.085,length(center-uMouse.xy)))*uMouse.z;
+ fragColor=vec4(texture(uGlyphs,glyphUv).rgb*visibility*uOpacity*(1.+hover*.8),0.);
 }

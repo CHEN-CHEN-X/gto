@@ -16,7 +16,7 @@ ${mod_description}
 Features:
 - Forge screen events for the title-screen effect
 - Reference-derived animated binary orbits and a black-hole background
-- Standalone rendering without third-party menu mods
+- Uses installed GTOCore and GTCEu hermetic casing models
 '''
 
 # 依赖 Forge（仅客户端，主题只在主菜单生效）
@@ -33,4 +33,19 @@ Features:
     mandatory=true
     versionRange="${minecraft_version_range}"
     ordering="NONE"
+    side="CLIENT"
+
+# Real casing models are provided by the installed mods, not bundled textures.
+[[dependencies.${mod_id}]]
+    modId="gtceu"
+    mandatory=true
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="CLIENT"
+
+[[dependencies.${mod_id}]]
+    modId="gtocore"
+    mandatory=true
+    versionRange="[0,)"
+    ordering="AFTER"
     side="CLIENT"

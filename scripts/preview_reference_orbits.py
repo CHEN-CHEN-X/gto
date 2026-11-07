@@ -25,6 +25,9 @@ def main():
     plate=ctx.program(vertex_shader=read('shaders/fsquad.vsh'),fragment_shader=read('shaders/orbit_plate.fsh'))
     glyph=ctx.program(vertex_shader=read('shaders/glyph_orbit.vsh'),fragment_shader=read('shaders/glyph_orbit.fsh'))
     pvao=ctx.vertex_array(plate,[])
+    stars_prog=ctx.program(vertex_shader=read('shaders/fsquad.vsh'),fragment_shader=read('shaders/binary_stars.fsh'))
+    stars_vao=ctx.vertex_array(stars_prog,[])
+    stars_prog['uArtwork']=0
     data=gzip.open(assets/'textures/orbit_instances.bin.gz','rb').read()
     magic,count=struct.unpack('>II',data[:8]);assert magic==0x47544F31
     instances=np.frombuffer(data[8:],dtype='>f4').astype('f4').reshape(count,16)
@@ -59,16 +62,21 @@ def main():
         program['uBrightRegions'].write(region_values(t,0).tobytes())
         program['uDarkRegions'].write(region_values(t,.5).tobytes())
     target=None;fbo=None;size=None
-    def draw(t,w=1280,h=720,sprites=True,lights=True):
+    def draw(t,w=1280,h=720,sprites=True,lights=True,stars=False):
         nonlocal target,fbo,size
         if size!=(w,h):
             if fbo is not None:fbo.release();target.release()
             target=ctx.texture((w,h),4);fbo=ctx.framebuffer([target]);size=(w,h)
         fbo.use();ctx.viewport=(0,0,w,h)
-        for p in [plate,glyph]:p['uResolution']=(w,h);p['uSourceAspect']=sw/sh
+        for p in [plate,glyph,stars_prog]:p['uResolution']=(w,h);p['uSourceAspect']=sw/sh
         upload_regions(plate,t)
         plate['uRegionStrength']=(bright_gain,dark_drop) if lights and speed>0 else (0.,0.)
         ctx.disable(moderngl.BLEND);pvao.render(vertices=3)
+        if stars:
+            stars_prog['uStarsTime']=t;stars_prog['uStarsStrength']=.4
+            ctx.enable(moderngl.BLEND);ctx.blend_equation=moderngl.FUNC_ADD
+            ctx.blend_func=(moderngl.ONE,moderngl.ONE,moderngl.ZERO,moderngl.ONE)
+            stars_vao.render(vertices=3)
         if sprites:
             ctx.enable(moderngl.BLEND);ctx.blend_equation=moderngl.FUNC_ADD
             ctx.blend_func=(moderngl.ONE,moderngl.ONE,moderngl.ZERO,moderngl.ONE)
@@ -79,6 +87,21 @@ def main():
     def render(t,w=1280,h=720):
         draw(t,w,h)
         return np.frombuffer(fbo.read(components=4,alignment=1),np.uint8).reshape(h,w,4)[::-1].copy()
+    # Exercise real shaders with a pointer and an emitted 0/1 particle.
+    initial=render(1)
+    plate['uMouse']=(-.4,-.20,1.);glyph['uMouse']=(-.4,-.20,1.)
+    hover=render(1)
+    assert np.abs(hover.astype(int)-initial.astype(int)).max()>10, 'Mouse hover has no visible effect'
+    emit=np.zeros((12,4),dtype='f4');emit[0]=(-.4,-.20,.5,1.)
+    plate['uParticles'].write(emit.tobytes())
+    moved=render(1)
+    assert np.abs(moved.astype(int)-hover.astype(int)).max()>5, 'Mouse particle is not rendered'
+    emit[0,2]=1.5;plate['uParticles'].write(emit.tobytes())
+    later=render(1)
+    assert np.abs(later.astype(int)-moved.astype(int)).max()>5, 'Mouse particle did not travel'
+    Image.fromarray(moved).save(out/'cursor_effect_preview.png')
+    plate['uMouse']=(0.,0.,0.);glyph['uMouse']=(0.,0.,0.)
+    plate['uParticles'].write(np.zeros((12,4),dtype='f4').tobytes())
     a=render(0);b=render(5);quarter=render(period/4);half=render(period/2)
     for name,frame in [('start',a),('preview',b),('quarter',quarter),('half',half)]:Image.fromarray(frame).save(out/f'reference_orbits_{name}.png')
     reference=Image.open(assets/'textures/reference.png').convert('RGBA')
@@ -100,6 +123,43 @@ def main():
     def plate_only(t,lights=True):
         draw(t,sprites=False,lights=lights)
         return np.frombuffer(fbo.read(components=4,alignment=1),np.uint8).reshape(720,1280,4)[::-1].copy()
+    # Stars stay in fixed positions; time changes only their brightness.
+    draw(0,sprites=False,lights=False,stars=True)
+    stars0=np.frombuffer(fbo.read(components=4,alignment=1),np.uint8).reshape(720,1280,4)[::-1].copy()
+    draw(8,sprites=False,lights=False,stars=True)
+    stars8=np.frombuffer(fbo.read(components=4,alignment=1),np.uint8).reshape(720,1280,4)[::-1].copy()
+    draw(0,sprites=False,lights=False,stars=False)
+    no_stars=np.frombuffer(fbo.read(components=4,alignment=1),np.uint8).reshape(720,1280,4)[::-1].copy()
+    delta0=stars0[:,:,:3].astype(int)-no_stars[:,:,:3].astype(int)
+    delta8=stars8[:,:,:3].astype(int)-no_stars[:,:,:3].astype(int)
+    changed0=(delta0.max(2)>1);changed8=(delta8.max(2)>1)
+    assert changed0.sum()>20 and changed8.sum()>20,'Background stars are not visible'
+    assert np.max(delta0)<=102 and np.max(delta8)<=102,'Stars exceed requested brightness'
+    assert np.abs(stars0.astype(int)-stars8.astype(int)).max()>2,'Stars do not twinkle'
+    stars_prog['uMouse']=(0.,.38,1.)
+    draw(0,sprites=False,lights=False,stars=True)
+    hovered=np.frombuffer(fbo.read(components=4,alignment=1),np.uint8).reshape(720,1280,4)[::-1].copy()
+    hover_delta=hovered[:,:,:3].astype(int)-stars0[:,:,:3].astype(int)
+    assert hover_delta.max()>5,'Mouse does not brighten background digits'
+    assert hover_delta.min()>=0,'Mouse darkens background digits'
+    yy,xx=np.mgrid[:720,:1280]
+    dist=np.hypot((xx-640)/720, (360-yy)/720-.38)
+    assert not (hover_delta.max(2)[dist>.15]>1).any(),'Mouse affects distant stars'
+    stars_prog['uMouse']=(0.,0.,0.)
+    oldstars=ctx.program(vertex_shader=read('shaders/fsquad.vsh'),fragment_shader=read('shaders/binary_stars.fsh').replace('seed>.576','seed>.288'))
+    oldvao=ctx.vertex_array(oldstars,[])
+    for k,v in [('uArtwork',0),('uResolution',(1280,720)),('uSourceAspect',sw/sh),('uStarsTime',0.),('uStarsStrength',.4),('uMouse',(0.,0.,0.))]:oldstars[k]=v
+    ctx.disable(moderngl.BLEND);oldvao.render(vertices=3)
+    old_image=np.frombuffer(fbo.read(components=4,alignment=1),np.uint8).reshape(720,1280,4)[::-1].copy()
+    old_lit=(old_image[:,:,:3].max(2)>1).sum()
+    assert changed0.sum()>old_lit*1.6,'Star density did not increase sufficiently'
+    print('Star density pixel ratio:',float(changed0.sum()/old_lit))
+    oldvao.release();oldstars.release()
+
+    assert ((changed0|changed8)[:70]).sum()>0,'Upper background has no stars'
+    assert not (changed0|changed8)[300:405,570:710].any(),'Stars enter event horizon'
+    draw(0,stars=True)
+    Image.fromarray(np.frombuffer(fbo.read(components=4,alignment=1),np.uint8).reshape(720,1280,4)[::-1].copy()).save(out/'binary_stars_preview.png')
     base=plate_only(0,False)
     samples=[plate_only(float(t)) for t in np.linspace(0,spot_period,24,endpoint=False)]
     max_delta=np.maximum.reduce([np.abs(frame[:,:,:3].astype(int)-base[:,:,:3].astype(int)).max(axis=2) for frame in samples])

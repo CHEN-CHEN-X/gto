@@ -2,6 +2,7 @@
 uniform vec2 uResolution;
 uniform float uSourceAspect,uOrbitAngle;
 uniform sampler2D uOrbitLut;
+uniform vec3 uMouse;
 in vec4 aOrbit;
 in vec4 aMotion;
 in vec4 aAtlas;
@@ -42,7 +43,11 @@ void main(){
  vec2 p=center+local;
  float aspect=uResolution.x/uResolution.y;
  float fit=min(1.,aspect/uSourceAspect);
- gl_Position=vec4(p/vec2(aspect,1.)*fit*2.,0,1);
+ vec2 delta=p-uMouse.xy;
+ float guard=smoothstep(.23,.32,length(p-vec2(0.,.015)));
+ float lens=(1.-smoothstep(0.,.12,length(delta)))*.065*uMouse.z*guard;
+ vec2 displayP=p+delta*lens;
+ gl_Position=vec4(displayP/vec2(aspect,1.)*fit*2.,0,1);
  glyphUv=aAtlas.xy+vec2(corner.x,1.-corner.y)*aAtlas.zw;
  sceneUv=p/vec2(uSourceAspect,1.)+.5;
  sceneUv.y=1.-sceneUv.y;

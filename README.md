@@ -1,6 +1,6 @@
 # GregTech Odyssey Menu
 
-Minecraft 1.20.1 / Forge 47.4.20 的客户端黑洞菜单模组（mod id `gto_menu`，版本 1.0.0，仅客户端）。Java 21 编译，已验证 JDK 25 的独立客户端启动；完整整合包仍需单独测试。
+Minecraft 1.20.1 / Forge 47.4.20 的客户端黑洞菜单模组（mod id `gto_menu`，版本 1.0.0，仅客户端）。Java 21 编译，已在隔离的 GTO 0.6.0-dev27 正式 Forge 客户端使用 JDK 25 启动并进入主菜单。
 
 通过 Forge 界面事件接入，无 FancyMenu、Konkrete、Melody 或本项目 Mixin 依赖。画面采用参考图的固定光丝与透镜外形，加上实时运行的数字贴片和轻微轨迹拖尾；没有视频、帧序列或播放缓存。
 
@@ -13,9 +13,9 @@ Minecraft 1.20.1 / Forge 47.4.20 的客户端黑洞菜单模组（mod id `gto_me
 - `ARTWORK_FLOW_STRENGTH=0.2`：吸积盘 300 秒/圈，中央光环 150 秒/圈。
 - `ARTWORK_TRAIL_STRENGTH=0.05`：轻微历史位置残影。
 - `ARTWORK_SPOT_ORBIT_SECONDS=300`：小范围亮暗区域沿轨道运行一圈的时间。
-- `ARTWORK_SPOT_BRIGHT_GAIN=1.0`：亮版素材显露强度（0～1），素材自身最高为底图亮度的 2.4 倍。
-- `ARTWORK_SPOT_DARK_DROP=1.0`：暗版素材显露强度（0～1），素材自身保留 15% 线条亮度；两项都设为 0 恢复原底图。
-- `EFFECT_ONLY=true`：纯效果显示，并屏蔽隐藏按钮输入；设为 false 恢复原版或整合包菜单。
+- `ARTWORK_SPOT_BRIGHT_GAIN=0.7`：亮版素材显露强度（0～1），素材自身最高为底图亮度的 2.4 倍。
+- `ARTWORK_SPOT_DARK_DROP=0.28`：暗版素材显露强度（0～1），素材自身保留 15% 线条亮度；两项都设为 0 恢复原底图。
+- `EFFECT_ONLY=true`：显示黑洞星球菜单，屏蔽原布局隐藏按钮；设为 false 恢复原版或整合包菜单。
 
 源码入口为 `client/MenuRenderEvents.java`，当前渲染器为 `render/ReferenceOrbitRenderer.java`；`ARTWORK_FLOW` 关闭或初始化失败时回退到 `render/BlackHoleRenderer.java` 的程序化渲染器。日志保留警告和错误，不输出周期帧率或注册表调试内容。
 
@@ -24,13 +24,14 @@ Minecraft 1.20.1 / Forge 47.4.20 的客户端黑洞菜单模组（mod id `gto_me
 | 组件 | 版本 | 说明 |
 |---|---|---|
 | Minecraft | 1.20.1 | 仅客户端 |
-| Minecraft Forge | 47.4.20 | 必需，`mods.toml` 中唯一的模组依赖 |
+| Minecraft Forge | 47.4.20 | 必需 |
+| GTCEu 和 GTOCore | 整合包版本 | 必需；封面在两者之后加载，直接使用注册的密封机壳模型 |
 
-`libs/` 下保留的 FancyMenu / Konkrete / Melody jar 是历史依赖，当前构建与运行都不再使用，也不再声明任何可选依赖。
+`libs/` 下保留的 FancyMenu / Konkrete / Melody jar 是历史依赖，当前构建与运行都不再使用。
 
 ## 构建与运行
 
-构建使用 JDK 21。`gradle.properties` 中配置了本机 JDK 路径，换机器需修改 `org.gradle.java.home` 和 `org.gradle.java.installations.paths`。
+构建使用 JDK 21。运行当前版本必须同时安装 GTCEu 和 GTOCore；仅含 Forge 的开发客户端不能加载。`gradle.properties` 中配置了本机 JDK 路径，换机器需修改 `org.gradle.java.home` 和 `org.gradle.java.installations.paths`。
 
 ```powershell
 $env:JAVA_HOME='<你的 JDK 21 路径>'
@@ -52,9 +53,9 @@ $env:JAVA_HOME='<你的 JDK 21 路径>'
 |---|---|
 | 构建目标 | **Java 21**。[build.gradle#L17](build.gradle#L17) 的 toolchain 与 [build.gradle#L192](build.gradle#L192) 的 `options.release = 21` 共同固定 |
 | Gradle | wrapper 使用 **Gradle 8.8** |
-| 编译验证 | 已离线构建通过；成品 9 个 class 均为 major 65（Java 21），没有 Java 25 字节码 |
-| 运行验证 | 已用 Oracle **JDK 25.0.3** 启动独立 Forge 开发客户端成功 |
-| 未验证 | **完整 GTO 整合包未安装并启动测试**，上述运行验证仅为独立开发客户端 |
+| 编译验证 | 已离线构建通过；成品 class 均为 major 65（Java 21），没有 Java 25 字节码 |
+| 运行验证 | 已用 Oracle **JDK 25.0.3** 启动隔离的 GTO 0.6.0-dev27 正式客户端并进入主菜单 |
+| 未验证 | **完整游戏玩法、存档及多人连接未测试**，上述运行验证覆盖隔离的正式整合包主菜单 |
 
 数据与日志摘录见 [pack_alignment_validation.json](docs/pack_alignment_validation.json)。用 JDK 25 启动游戏不等于生成 Java 25 字节码，发行字节码固定为 21。完整对照理由见 [PACK_VERSION_ALIGNMENT.md](docs/PACK_VERSION_ALIGNMENT.md)。
 
@@ -122,3 +123,11 @@ MIT，见 [LICENSE.txt](LICENSE.txt)。与 `mods.toml` 中的 `license=MIT` 一�
 | 其他部分（工程搭建、构建与依赖配置、工具脚本、文档整理） | 约 30% | 约 70% |
 
 以上为按工作量估算的大致比例，不是精确统计。`效果/` 与 `效果图/` 是用户提供的参考素材与离线渲染产物，只用于本地对照，不入版本库。更完整的说明见 [docs/CONTRIBUTION.md](docs/CONTRIBUTION.md)。
+
+亮区优先，暗区在接近亮区时提前平滑退让，避免交界处反复切换。暗版显露强度 0.28，对线条最大压暗约 24%；细长遮罩边缘全程羽化。
+
+中央图标可打开百科，地址配置在游戏目录的 `config/gto_menu-client.toml`，键名为 `[links]` 下的 `wikiUrl`；修改后重载配置或重启生效。默认地址为 `https://gtodyssey.com/`。
+
+当前菜单入口使用独立生成的像素素材：单人星球、多人双星、模组科技星球、设置齿轮星球、退出火箭。标题和中央图标引用已加载的 GTOCore 资源。中央图标具有选中反馈，并打开配置中的百科地址。菜单保留原有按钮回调和启用状态，支持 Tab、方向键和 Enter。
+
+背景数据星辰使用独立 Shader 通道，位置固定、缓慢明暗；鼠标靠近可点亮。14 阶真实密封机壳沿参考轨道运行，每次启动随机三个机壳以 5–20 度/秒自转。鼠标扫过吸积盘可激活局部提亮、轻微避让和沿轨道飘走的 0/1。
