@@ -1,4 +1,4 @@
-> 当前版本已按新标注撤掉程序字形，改用慢速原图材质，速度降低 80%；以 [SLOW_MATERIAL.md](SLOW_MATERIAL.md) 为准。
+> 历史记录（内层数字补齐时期）：本文记录前景/内层数字动画的实现与验证，后继的降速与材质调整见 [SLOW_MATERIAL.md](SLOW_MATERIAL.md)；当前实现见 [README](../README.md)。
 
 # 前景／内层数字运动补齐
 
@@ -40,5 +40,5 @@ Gradle build / reobfJar / verifyJarSize 通过；最终 JAR 10,154,034 字节（
 GPU 动画：效果图/artwork_flow_preview.gif；整圈 10 倍速：效果图/orbit_full_turn_10x.gif。
 
 ```powershell
-& 'C:\Program Files\Python314\python.exe' scripts/preview_artwork.py --animate --orbit-cycle --baseline-shader 'backups/inner-orbits-20261106-184210/src/main/resources/assets/gto_menu/shaders/artwork_flow.fsh'
+python scripts/preview_artwork.py --animate --orbit-cycle --baseline-shader 'backups/inner-orbits-20261106-184210/src/main/resources/assets/gto_menu/shaders/artwork_flow.fsh'
 ```

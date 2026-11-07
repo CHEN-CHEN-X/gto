@@ -2,11 +2,13 @@
 
 1.0.0
 =====
- - 初始版本：GregTech Odyssey 主菜单黑洞背景。
- - 渲染管线为 4 pass：scene（Schwarzschild 零测地线积分 + 吸积盘 + 星场）→ trail（帧反馈拖尾）
-   → bloom（可分离高斯 4 趟）→ composite（ACES 色调映射 + sRGB + 暗角 + 抖动），全程 RGBA16F HDR。
- - 主菜单接入：Mixin 注入原版 TitleScreen，替换全景图为着色器背景；按钮与标题排版由 FancyMenu 主题负责。
+ - 初始版本：GregTech Odyssey 主菜单黑洞背景，Minecraft 1.20.1 / Forge 47.4.20，Java 21。
+ - 通过 Forge `ScreenEvent.Render.Pre` 接入主菜单，不依赖 FancyMenu / Konkrete / Melody，也不含本项目 Mixin。
+ - 主画面：参考图的固定透镜与光丝材质，加上 1074 个数字贴片沿闭合轨道运行、亮暗素材局部流动和轻微轨迹拖尾；
+   没有视频、帧序列或播放缓存，最终 JAR 小于 10 MiB。
+ - 程序化回退渲染器：4 pass（scene 零测地线积分 + 吸积盘 + 星场 → trail 帧反馈 → bloom 可分离高斯 4 趟
+   → composite ACES + sRGB + 暗角 + 抖动），全程 RGBA16F HDR。
  - 附带两个未接线的实验着色器：blackhole_disk_v2.fsh（连续吸积盘 + 环绕数字层）、
    blackhole_volume_v3.fsh（场景内发光晕 + 差速细丝；离线编译通过，尚未进游戏验证）。
- - 文档：docs/ 下的设计、审计与状态记录。
- - 离线预览工具：scripts/preview.py，基于 moderngl，不启动游戏即可出图。
+ - 文档：docs/ 下的设计、审计、版本对齐与状态记录。
+ - 离线工具：scripts/ 下的预览与素材烘焙脚本，基于 moderngl，不启动游戏即可出图。

@@ -1,6 +1,4 @@
-> 当前版本已按新标注撤掉程序字形，改用慢速原图材质，速度降低 80%；以 [SLOW_MATERIAL.md](SLOW_MATERIAL.md) 为准。
-
-> 后续已补齐前景与内层数字动画，最新验证和包体见 [INNER_ORBITS.md](INNER_ORBITS.md)。
+> 历史记录（连续整圈旋转时期）：本文记录的完整轨道旋转随后由 [INNER_ORBITS.md](INNER_ORBITS.md) 补齐前景与内层数字动画，再经 [SLOW_MATERIAL.md](SLOW_MATERIAL.md) 降速调整；当前实现见 [README](../README.md)。
 
 # 连续整圈旋转修复
 
@@ -29,7 +27,7 @@
 
 复查：
 ```powershell
-& 'C:\Program Files\Python314\python.exe' scripts/preview_artwork.py --orbit-cycle --animate
+python scripts/preview_artwork.py --orbit-cycle --animate
 ```
 
 备份：`backups/continuous-orbit-20261106-130954/`。

@@ -1,10 +1,6 @@
-> 当前方案已更新为用户授权的原图材质 + 实时局部流动，最终 JAR 小于 10 MiB。以 [ARTWORK_FLOW.md](ARTWORK_FLOW.md) 为准，下文为先前程序生成版本的历史记录。
-
-> 实时渲染更新（2026-11-06）：用户最终明确拒绝视频/逐帧图片播放，允许重构。媒体方案未接入；本版继续使用纯程序 GLSL。最近一次改动前备份位于 backups/reference-media-20261106-120246。
+> 历史记录（参考图匹配时期）：本文记录 2026-11-06 的迭代与验证，当时使用 Java 17、程序化 GLSL 管线和 Mixin + FancyMenu 接入。后续方案依次为 [ARTWORK_FLOW.md](ARTWORK_FLOW.md) → [CONTINUOUS_ORBIT.md](CONTINUOUS_ORBIT.md) → [INNER_ORBITS.md](INNER_ORBITS.md) → [SLOW_MATERIAL.md](SLOW_MATERIAL.md)。当前构建目标为 Java 21、默认渲染器为 `ReferenceOrbitRenderer`，见 [README](../README.md)。
 >
-> 本次修改 blackhole.fsh、BlackHoleRenderer.java、RenderConfig.java、scripts/preview.py：增加不规则轨道细丝、近远字形层次、弧形交汇亮部和像素足迹抗锯齿；主体相机距离为 11.6、极角 1.26。Bloom 两个缓冲降至半宽半高，主场景与两个历史缓冲保持原生分辨率。1080p RGBA16F 附件理论占用 55.37 MiB（原 79.10 MiB，降低 30%，不含游戏其他资源、驱动开销）。这不是对视频解码器内存占用的比较。
->
-> 本次 build 成功；test 为 NO-SOURCE。四个 GLSL 阶段编译和链接成功；30/60 FPS 同时刻 RGB 平均差约 0.0051/255，角落 RGB 为 0。最新 GPU 图为 效果图/preview_realtime_refined.png。当前视觉仍是近似，未达到与参考图片逐像素一致。
+> 本阶段关键结论保留：用户明确拒绝视频/逐帧图片播放，媒体方案未接入，本版继续使用纯程序 GLSL；改动前备份为 `backups/reference-media-20261106-120246`。Bloom 两个缓冲降至半宽半高，1080p RGBA16F 附件理论占用 55.37 MiB（原 79.10 MiB，降低 30%，不含游戏其他资源与驱动开销，也不是与视频解码器内存占用的比较）。build 成功、test 为 NO-SOURCE；四个 GLSL 阶段编译链接成功；30/60 FPS 同时刻 RGB 平均差约 0.0051/255，角落 RGB 为 0。当前视觉仍是近似，未达到与参考图片逐像素一致。
 # 原始需求图匹配版本 · 2026-11-06
 
 ## 结果与范围
@@ -49,7 +45,7 @@
 在项目目录的 PowerShell 中：
 
 ```powershell
-$env:JAVA_HOME = 'E:\JAVA\JAVA17\jdk-17.0.20.1+1'
+$env:JAVA_HOME = '<当时的 JDK 17 路径>'
 .\gradlew.bat --offline build
 .\gradlew.bat --offline runClient -x downloadAssets
 ```
@@ -61,8 +57,8 @@ $env:JAVA_HOME = 'E:\JAVA\JAVA17\jdk-17.0.20.1+1'
 GPU 离线预览：
 
 ```powershell
-& 'C:\Program Files\Python314\python.exe' scripts/preview.py --output preview_reference_match.png
-& 'C:\Program Files\Python314\python.exe' scripts/preview.py --width 960 --height 540 --frames 90 --fps 30 --animate --output preview_reference_motion.png
+python scripts/preview.py --output preview_reference_match.png
+python scripts/preview.py --width 960 --height 540 --frames 90 --fps 30 --animate --output preview_reference_motion.png
 ```
 
 加载工程真实 Shader；`.pyenv` 已含 moderngl、glfw、numpy、Pillow。GIF 是时间片段预览，循环连接处不保证无缝。

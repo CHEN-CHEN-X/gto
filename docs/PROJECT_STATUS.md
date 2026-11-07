@@ -1,6 +1,4 @@
-> 当前方案已更新为用户授权的原图材质 + 实时局部流动，最终 JAR 小于 10 MiB。以 [ARTWORK_FLOW.md](ARTWORK_FLOW.md) 为准，下文为先前程序生成版本的历史记录。
-
-> 2026-11-06 本次更新：已修改线上 blackhole.fsh 并完成原始需求图方向的迭代。下文旧版状态作为历史保留；当前实现、运行方法、备份和验证见 [REFERENCE_MATCH.md](REFERENCE_MATCH.md)。
+> 历史记录（程序化方案时期）：本文记录旧版 Mixin + FancyMenu 方案与三版着色器的对比，其中 Mixin 入口、FancyMenu 依赖和 `blackhole.fsh` 的线上状态均已改变。当前依赖、入口、参数与运行方式见 [README](../README.md)；版本对齐与 JDK 验证见 [PACK_VERSION_ALIGNMENT.md](PACK_VERSION_ALIGNMENT.md)。
 
 # GTO 主菜单黑洞背景 —— 项目现状
 
@@ -19,15 +17,17 @@
 
 | 项 | 值 | 来源 |
 |---|---|---|
-| mod id / name | `gto_menu` / GregTech Odyssey Menu | [gradle.properties](../gradle.properties#L59-L61) |
-| 版本 | 1.0.0 | 同上 L65 |
-| MC / Forge | 1.20.1 / 47.4.5 | 同上 L17、L23 |
+| mod id / name | `gto_menu` / GregTech Odyssey Menu | [gradle.properties](../gradle.properties) |
+| 版本 | 1.0.0 | 同上 |
+| MC / Forge | 1.20.1 / 47.4.20 | 同上 |
 | 映射 | `official` 1.20.1 | 同上 L42-L45 |
 | 复用目标 | NeoForge 21.1.77 / MC 1.21.1 | 跨工程研究，非本仓库依赖 |
 
 ---
 
 ## 3. 代码结构
+
+以下为旧版结构；`mixin/TitleScreenMixin.java` 已移除，当前入口为 `client/MenuRenderEvents.java`，默认渲染器为 `render/ReferenceOrbitRenderer.java`。
 
 ```
 src/main/java/com/gto/menu/
@@ -50,11 +50,11 @@ src/main/resources/assets/gto_menu/shaders/
 
 ### 3.1 渲染管线（[BlackHoleRenderer.java](../src/main/java/com/gto/menu/render/BlackHoleRenderer.java)）
 
-`scene → trail → bloom(H/V/H/V) → composite`，全部 `RGBA16F`，scene 按 `RenderConfig.RENDER_SCALE = 0.75` 降分辨率。
+`scene → trail → bloom(H/V/H/V) → composite`，全部 `RGBA16F`；`RenderConfig.RENDER_SCALE` 现为 1.0（原生分辨率），旧版曾用 0.75 降分辨率。
 
-- 着色器加载点：[L301-L306](../src/main/java/com/gto/menu/render/BlackHoleRenderer.java#L301-L306)，**当前 scene 绑的是 `blackhole.fsh`（L303）**。
+- 程序化回退路径的着色器加载点：[BlackHoleRenderer.java#L311](../src/main/java/com/gto/menu/render/BlackHoleRenderer.java#L311)，scene 绑定 `blackhole.fsh`。当前默认路径已改为 [ReferenceOrbitRenderer.java](../src/main/java/com/gto/menu/render/ReferenceOrbitRenderer.java)。
 - 切换版本 = 改这一行字符串，Java 侧无需其它改动。
-- 输出绑回 MC 主 FBO：[L147](../src/main/java/com/gto/menu/render/BlackHoleRenderer.java#L147)。
+- 输出绑回 MC 主 FBO：[BlackHoleRenderer.java](../src/main/java/com/gto/menu/render/BlackHoleRenderer.java)。
 - 时间源 `System.nanoTime()`，不依赖 `System.currentTimeMillis`。
 
 ---
@@ -63,7 +63,7 @@ src/main/resources/assets/gto_menu/shaders/
 
 | 版本 | 文件 | 状态 | 内容 | 已知问题 |
 |---|---|---|---|---|
-| v1 | [blackhole.fsh](../src/main/resources/assets/gto_menu/shaders/blackhole.fsh) | **线上** | 9 条数字细环（`RINGS = 9`，L48），环上均匀排 0/1，无连续盘面 | 视觉退化成"9 条数字带"，用户明确不满意 |
+| v1 | [blackhole.fsh](../src/main/resources/assets/gto_menu/shaders/blackhole.fsh) | **旧线上（现为程序化回退）** | 9 条数字细环（`RINGS = 9`，L48），环上均匀排 0/1，无连续盘面 | 视觉退化成"9 条数字带"，用户明确不满意 |
 | v2 | [blackhole_disk_v2.fsh](../src/main/resources/assets/gto_menu/shaders/blackhole_disk_v2.fsh) | **离线验证通过，未接线** | 连续吸积盘（r^-2.6 亮度、开普勒剪切条纹、掠射光学厚度、内缘光子环）+ 双层数字（±0.28，4 行/环 16 个，独立相位，精确 billboard） | 盘面仍偏"干净正弦条纹"，缺气体感 |
 | v3 | [blackhole_volume_v3.fsh](../src/main/resources/assets/gto_menu/shaders/blackhole_volume_v3.fsh) | **离线验证通过，未接线** | v2 + 每步 `ds` 积分的场景内发光晕（`inSceneGlow`）+ 三倍频反向旋转值噪声（`filament`） | 16×16 尺寸下这两项增益几乎不可见；**未进游戏验证（实验件）** |
 
@@ -151,7 +151,7 @@ src/main/resources/assets/gto_menu/shaders/
 
 ## 9. 待办 / 待决
 
-1. **决定主菜单挂哪个版本**：若采纳 v3，改 [BlackHoleRenderer.java#L303](../src/main/java/com/gto/menu/render/BlackHoleRenderer.java#L303) 一行即可。当前 `RenderConfig` 实际值：`RENDER_SCALE 0.75`、`DISK_INNER 3.0`、`DISK_OUTER 9.0`、`TRAIL_DECAY 0.85`、`BLOOM_THRESHOLD 1.1`、`BLOOM_STRENGTH 0.6`；切换后是否需要重调（尤其是 `TRAIL_DECAY` 与 bloom 阈值）**尚未验证**。
+1. **决定主菜单挂哪个版本**：若采纳 v3，改 [BlackHoleRenderer.java#L311](../src/main/java/com/gto/menu/render/BlackHoleRenderer.java#L311) 一行即可。后续已由 `ReferenceOrbitRenderer` 的默认路径取代，此项仅作历史待办保留。当时记录的参数已变更；按当前 [RenderConfig.java](../src/main/java/com/gto/menu/render/RenderConfig.java) 实测：`RENDER_SCALE 1.0`、`DISK_INNER 1.9`、`DISK_OUTER 10.5`、`TRAIL_DECAY 0.80`、`BLOOM_THRESHOLD 0.85`、`BLOOM_STRENGTH 0.7`。切换版本后是否需要重调**尚未验证**。
 2. **v2/v3 的条纹是否换成上游 `diskFbm`**（0xydev，MIT，4 阶 `pnoise2`）——这是许可证干净、且能提升"气体感"的唯一路径。
 3. **物品侧是否开工**：需用户确认后才动 skyland-build；届时产物是「1 个 shader + BEWLR + `uRect` 修正」，需 `endBatch`。
 4. **许可证风险**：任何来自 `lstSRS` 的做法都不得进入发行物。

@@ -1,6 +1,4 @@
-> 当前版本已按新标注撤掉程序字形，改用慢速原图材质，速度降低 80%；以 [SLOW_MATERIAL.md](SLOW_MATERIAL.md) 为准。
-
-> 后续修复：已移除短周期流动重置，改为完整轨道旋转；以 [CONTINUOUS_ORBIT.md](CONTINUOUS_ORBIT.md) 的实现、速度、验证和 JAR 大小为准。下面的交错相位说明属于旧版本。
+> 历史记录（原图材质流动时期）：本文记录 2026-11-06 的 ArtworkFlowRenderer 方案与验证数据。文中的短周期交错相位已被 [CONTINUOUS_ORBIT.md](CONTINUOUS_ORBIT.md) 的完整轨道旋转取代，后续又经过 [INNER_ORBITS.md](INNER_ORBITS.md) 与 [SLOW_MATERIAL.md](SLOW_MATERIAL.md)；当前实现见 [README](../README.md)。
 
 # 原图材质实时流动 · 最终 JAR ≤ 10 MiB
 
@@ -41,7 +39,7 @@
 在项目目录执行：
 
 ```powershell
-$env:JAVA_HOME = 'E:\JAVA\JAVA17\jdk-17.0.20.1+1'
+$env:JAVA_HOME = '<当时的 JDK 17 路径>'
 .\gradlew.bat --offline build
 .\gradlew.bat --offline runClient -x downloadAssets
 ```
@@ -64,7 +62,7 @@ $env:JAVA_HOME = 'E:\JAVA\JAVA17\jdk-17.0.20.1+1'
 复查命令：
 
 ```powershell
-& 'C:\Program Files\Python314\python.exe' scripts/preview_artwork.py --animate
+python scripts/preview_artwork.py --animate
 ```
 
 输出：`效果图/artwork_flow_preview.png`、`artwork_flow_preview.gif`、`artwork_flow_portrait.png`、`artwork_flow_validation.json`。这些验证文件不进入 JAR。
